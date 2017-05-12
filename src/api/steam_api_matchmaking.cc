@@ -1,0 +1,61 @@
+// Copyright (c) 2016 Greenheart Games Pty. Ltd. All rights reserved.
+// Use of this source code is governed by the MIT license that can be
+// found in the LICENSE file.
+
+#include <memory>
+
+#include "nan.h"
+#include "steam/steam_api.h"
+#include "v8.h"
+
+#include "greenworks_utils.h"
+#include "steam_api_registry.h"
+#include "steam_id.h"
+
+namespace greenworks {
+namespace api {
+namespace {
+
+void InitLobbyType(v8::Handle<v8::Object> exports) {
+  v8::Local<v8::Object> lobby_type = Nan::New<v8::Object>();
+  SET_TYPE(lobby_type, "Private", k_ELobbyTypePrivate);
+  SET_TYPE(lobby_type, "FriendsOnly", k_ELobbyTypeFriendsOnly);
+  SET_TYPE(lobby_type, "Public", k_ELobbyTypePublic);
+  SET_TYPE(lobby_type, "Invisible", k_ELobbyTypeInvisible);
+  Nan::Persistent<v8::Object> constructor;
+  constructor.Reset(lobby_type);
+  Nan::Set(exports,
+           Nan::New("LobbyType").ToLocalChecked(),
+           lobby_type);
+}
+
+NAN_METHOD(CreateLobby) {
+  Nan::HandleScope scope;
+  if (info.Length() < 2 || !info[0]->IsInt32() || !info[1]->IsInt32()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  ELobbyType lobby_type = static_cast<ELobbyType>(info[0]->Int32Value());
+  if (lobby_type < k_ELobbyTypePrivate || lobby_type > k_ELobbyTypeInvisible) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  int max_members = info[1]->Int32Value();
+
+  info.GetReturnValue().Set(Nan::New<v8::Integer>(
+    SteamMatchmaking()->CreateLobby(lobby_type, max_members)));
+}
+
+void RegisterAPIs(v8::Handle<v8::Object> exports) {
+  InitLobbyType(exports);
+
+  Nan::Set(exports,
+           Nan::New("createLobby").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(CreateLobby)->GetFunction());
+}
+
+SteamAPIRegistry::Add X(RegisterAPIs);
+
+}  // namespace
+}  // namespace api
+}  // namespace greenworks
