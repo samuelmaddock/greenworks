@@ -8,7 +8,7 @@
 #include "steam/steam_api.h"
 #include "v8.h"
 
-#include "greenworks_utils.h"
+#include "greenworks_async_workers.h"
 #include "steam_api_registry.h"
 #include "steam_id.h"
 
@@ -31,7 +31,8 @@ void InitLobbyType(v8::Handle<v8::Object> exports) {
 
 NAN_METHOD(CreateLobby) {
   Nan::HandleScope scope;
-  if (info.Length() < 2 || !info[0]->IsInt32() || !info[1]->IsInt32()) {
+  if (info.Length() < 3 || !info[0]->IsInt32() || !info[1]->IsInt32() ||
+      !info[2]->IsFunction()) {
     THROW_BAD_ARGS("Bad arguments");
   }
 
@@ -42,8 +43,13 @@ NAN_METHOD(CreateLobby) {
 
   int max_members = info[1]->Int32Value();
 
-  info.GetReturnValue().Set(Nan::New<v8::Integer>(
-    SteamMatchmaking()->CreateLobby(lobby_type, max_members)));
+  Nan::Callback* success_callback =
+      new Nan::Callback(info[2].As<v8::Function>());
+  Nan::Callback* error_callback = NULL;
+
+  Nan::AsyncQueueWorker(new greenworks::CreateLobbyWorker(
+      success_callback, error_callback, lobby_type, max_members));
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 void RegisterAPIs(v8::Handle<v8::Object> exports) {

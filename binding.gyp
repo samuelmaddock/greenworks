@@ -101,6 +101,8 @@
         'src/greenworks_version.h',
         'src/greenworks_workshop_workers.cc',
         'src/greenworks_workshop_workers.h',
+        'src/greenworks_matchmaking_workers.cc',
+        'src/greenworks_matchmaking_workers.h',
         'src/greenworks_zip.cc',
         'src/greenworks_zip.h',
         'src/steam_async_worker.cc',
