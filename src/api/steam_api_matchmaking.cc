@@ -52,12 +52,37 @@ NAN_METHOD(CreateLobby) {
   info.GetReturnValue().Set(Nan::Undefined());
 }
 
+NAN_METHOD(InviteUserToLobby) {
+  Nan::HandleScope scope;
+  if (info.Length() < 2 || !info[0]->IsString() || !info[1]->IsString()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  std::string lobby_id_str(*(v8::String::Utf8Value(info[0])));
+  CSteamID lobby_id(utils::strToUint64(lobby_id_str));
+  if (!lobby_id.IsValid()) {
+    THROW_BAD_ARGS("Lobby Steam ID is invalid");
+  }
+
+  std::string steam_id_str(*(v8::String::Utf8Value(info[1])));
+  CSteamID steam_id(utils::strToUint64(steam_id_str));
+  if (!steam_id.IsValid()) {
+    THROW_BAD_ARGS("User Steam ID is invalid");
+  }
+
+  info.GetReturnValue().Set(
+      SteamMatchmaking()->InviteUserToLobby(lobby_id, steam_id));
+}
+
 void RegisterAPIs(v8::Handle<v8::Object> exports) {
   InitLobbyType(exports);
 
   Nan::Set(exports,
            Nan::New("createLobby").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(CreateLobby)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("inviteUserToLobby").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(InviteUserToLobby)->GetFunction());
 }
 
 SteamAPIRegistry::Add X(RegisterAPIs);
