@@ -50,4 +50,39 @@ void CreateLobbyWorker::HandleOKCallback() {
   callback->Call(1, argv);
 }
 
+
+JoinLobbyWorker::JoinLobbyWorker(
+    Nan::Callback* success_callback,
+    Nan::Callback* error_callback,
+    CSteamID lobby_id)
+        :SteamCallbackAsyncWorker(success_callback, error_callback),
+        lobby_id_(lobby_id) {
+}
+
+void JoinLobbyWorker::Execute() {
+  SteamAPICall_t lobby_result = SteamMatchmaking()->JoinLobby(lobby_id_);
+  call_result_.Set(lobby_result, this, &JoinLobbyWorker::OnLobbyJoined);
+
+  WaitForCompleted();
+}
+
+void JoinLobbyWorker::OnLobbyJoined(
+    LobbyEnter_t* result,
+    bool success) { // TODO: what is this bool?
+  if (result->m_EChatRoomEnterResponse == k_EChatRoomEnterResponseSuccess) {
+    enter_response_ = static_cast<EChatRoomEnterResponse>(result->m_EChatRoomEnterResponse);
+  } else {
+    SetErrorMessage("Error on joining Steam matchmaking lobby.");
+  }
+  is_completed_ = true;
+}
+
+void JoinLobbyWorker::HandleOKCallback() {
+  Nan::HandleScope scope;
+
+  v8::Local<v8::Value> argv[] = {
+    Nan::New(enter_response_) };
+  callback->Call(1, argv);
+}
+
 }  // namespace greenworks

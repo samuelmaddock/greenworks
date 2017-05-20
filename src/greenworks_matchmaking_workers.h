@@ -32,6 +32,24 @@ class CreateLobbyWorker : public SteamCallbackAsyncWorker {
   CCallResult<CreateLobbyWorker, LobbyCreated_t> call_result_;
 };
 
+
+class JoinLobbyWorker : public SteamCallbackAsyncWorker {
+ public:
+  JoinLobbyWorker(Nan::Callback* success_callback,
+                  Nan::Callback* error_callback,
+                  CSteamID lobby_id);
+  void OnLobbyJoined(LobbyEnter_t* result, bool success);
+
+  // Override Nan::AsyncWorker methods.
+  virtual void Execute();
+  virtual void HandleOKCallback();
+
+ private:
+  CSteamID lobby_id_;
+  EChatRoomEnterResponse enter_response_;
+  CCallResult<JoinLobbyWorker, LobbyEnter_t> call_result_;
+};
+
 }  // namespace greenworks
 
 #endif  // SRC_GREENWORKS_MATCHMAKING_WORKERS_H_

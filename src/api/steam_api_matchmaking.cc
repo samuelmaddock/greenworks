@@ -52,6 +52,43 @@ NAN_METHOD(CreateLobby) {
   info.GetReturnValue().Set(Nan::Undefined());
 }
 
+NAN_METHOD(JoinLobby) {
+  Nan::HandleScope scope;
+  if (info.Length() < 1 || !info[0]->IsString()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  std::string lobby_id_str(*(v8::String::Utf8Value(info[0])));
+  CSteamID lobby_id(utils::strToUint64(lobby_id_str));
+  if (!lobby_id.IsValid()) {
+    THROW_BAD_ARGS("Lobby Steam ID is invalid");
+  }
+
+  Nan::Callback* success_callback =
+      new Nan::Callback(info[2].As<v8::Function>());
+  Nan::Callback* error_callback = NULL;
+
+  Nan::AsyncQueueWorker(new greenworks::JoinLobbyWorker(
+      success_callback, error_callback, lobby_id));
+  info.GetReturnValue().Set(Nan::Undefined());
+}
+
+NAN_METHOD(LeaveLobby) {
+  Nan::HandleScope scope;
+  if (info.Length() < 1 || !info[0]->IsString()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  std::string lobby_id_str(*(v8::String::Utf8Value(info[0])));
+  CSteamID lobby_id(utils::strToUint64(lobby_id_str));
+  if (!lobby_id.IsValid()) {
+    THROW_BAD_ARGS("Lobby Steam ID is invalid");
+  }
+
+  SteamMatchmaking()->LeaveLobby(lobby_id);
+  info.GetReturnValue().Set(Nan::Undefined());
+}
+
 NAN_METHOD(InviteUserToLobby) {
   Nan::HandleScope scope;
   if (info.Length() < 2 || !info[0]->IsString() || !info[1]->IsString()) {
@@ -80,6 +117,12 @@ void RegisterAPIs(v8::Handle<v8::Object> exports) {
   Nan::Set(exports,
            Nan::New("createLobby").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(CreateLobby)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("joinLobby").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(JoinLobby)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("leaveLobby").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(LeaveLobby)->GetFunction());
   Nan::Set(exports,
            Nan::New("inviteUserToLobby").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(InviteUserToLobby)->GetFunction());
