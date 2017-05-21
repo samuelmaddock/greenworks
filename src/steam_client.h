@@ -31,6 +31,10 @@ class SteamClient {
     virtual void OnGameConnectedFriendChatMessage(uint64 raw_steam_id,
                                                   int message_id) = 0;
     virtual void OnDLCInstalled(AppId_t dlc_app_id) = 0;
+    virtual void OnLobbyChatMessage(uint64 raw_lobby_steam_id,
+                                    uint64 raw_user_steam_id,
+                                    uint8 chat_entry_type,
+                                    int chat_id) = 0;
     virtual ~Observer() {}
   };
 
@@ -71,6 +75,7 @@ class SteamClient {
                  GameConnectedFriendChatMsg_t,
                  game_connected_friend_chat_msg_);
   STEAM_CALLBACK(SteamClient, OnDLCInstalled, DlcInstalled_t, dlc_installed_);
+  STEAM_CALLBACK(SteamClient, OnLobbyChatMessage, LobbyChatMsg_t, lobby_chat_msg_);
 };
 
 }  // namespace greenworks

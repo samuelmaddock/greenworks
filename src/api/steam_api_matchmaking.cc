@@ -111,6 +111,64 @@ NAN_METHOD(InviteUserToLobby) {
       SteamMatchmaking()->InviteUserToLobby(lobby_id, steam_id));
 }
 
+NAN_METHOD(SendLobbyChatMsg) {
+  Nan::HandleScope scope;
+  if (info.Length() < 2 || !info[0]->IsString() ||
+      !node::Buffer::HasInstance(info[1])) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  std::string lobby_id_str(*(v8::String::Utf8Value(info[0])));
+  CSteamID lobby_id(utils::strToUint64(lobby_id_str));
+  if (!lobby_id.IsValid()) {
+    THROW_BAD_ARGS("Lobby Steam ID is invalid");
+  }
+
+  char* msg_buf = node::Buffer::Data(info[1]);
+  size_t msg_buf_size = node::Buffer::Length(info[1]);
+
+  info.GetReturnValue().Set(
+      SteamMatchmaking()->SendLobbyChatMsg(lobby_id, msg_buf, msg_buf_size));
+}
+
+
+NAN_METHOD(GetLobbyChatEntry) {
+  Nan::HandleScope scope;
+  if (info.Length() < 2 || !info[0]->IsString() || !info[1]->IsInt32()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  std::string lobby_id_str(*(v8::String::Utf8Value(info[0])));
+  CSteamID lobby_id(utils::strToUint64(lobby_id_str));
+  if (!lobby_id.IsValid()) {
+    THROW_BAD_ARGS("Lobby Steam ID is invalid");
+  }
+
+  int chat_id = info[1]->Int32Value();
+
+  CSteamID chat_steam_id;
+  EChatEntryType chat_entry_type;
+
+  char buf[4096];
+  int buf_size = 4096; // max chat msg
+
+  int num_bytes = SteamMatchmaking()->GetLobbyChatEntry(lobby_id, chat_id, &chat_steam_id,
+    &buf, buf_size, &chat_entry_type);
+
+  auto msg_buf = Nan::CopyBuffer(buf, num_bytes);
+  auto chat_steam_id_str = utils::uint64ToString(chat_steam_id.ConvertToUint64());
+
+  v8::Local<v8::Object> chat_entry = Nan::New<v8::Object>();
+  Nan::Set(chat_entry,
+    Nan::New("steamId").ToLocalChecked(),
+    Nan::New(chat_steam_id_str).ToLocalChecked());
+  Nan::Set(chat_entry,
+    Nan::New("message").ToLocalChecked(),
+    msg_buf.ToLocalChecked());
+
+  info.GetReturnValue().Set(chat_entry);
+}
+
 void RegisterAPIs(v8::Handle<v8::Object> exports) {
   InitLobbyType(exports);
 
@@ -126,6 +184,12 @@ void RegisterAPIs(v8::Handle<v8::Object> exports) {
   Nan::Set(exports,
            Nan::New("inviteUserToLobby").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(InviteUserToLobby)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("sendLobbyChatMsg").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(SendLobbyChatMsg)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("getLobbyChatEntry").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(GetLobbyChatEntry)->GetFunction());
 }
 
 SteamAPIRegistry::Add X(RegisterAPIs);

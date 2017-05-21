@@ -43,7 +43,8 @@ SteamClient::SteamClient()
       game_connected_friend_chat_msg_(
           this,
           &SteamClient::OnGameConnectedFriendChatMessage),
-      dlc_installed_(this, &SteamClient::OnDLCInstalled) {}
+      dlc_installed_(this, &SteamClient::OnDLCInstalled),
+      lobby_chat_msg_(this, &SteamClient::OnLobbyChatMessage) {}
 
 SteamClient::~SteamClient() {
   for (size_t i = 0; i < observer_list_.size(); ++i) {
@@ -124,6 +125,18 @@ void SteamClient::OnDLCInstalled(DlcInstalled_t *callback) {
   for (size_t i = 0; i < observer_list_.size(); ++i) {
     observer_list_[i]->OnDLCInstalled(
         callback->m_nAppID);
+  }
+}
+
+
+void SteamClient::OnLobbyChatMessage(
+    LobbyChatMsg_t* callback) {
+  for (size_t i = 0; i < observer_list_.size(); ++i) {
+    observer_list_[i]->OnLobbyChatMessage(
+        callback->m_ulSteamIDLobby,
+        callback->m_ulSteamIDUser,
+        callback->m_eChatEntryType,
+        callback->m_iChatID);
   }
 }
 

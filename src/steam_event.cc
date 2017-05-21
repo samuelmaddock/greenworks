@@ -100,4 +100,20 @@ void SteamEvent::OnDLCInstalled(AppId_t dlc_app_id) {
       Nan::New(persistent_steam_events_), "on", 2, argv);
 }
 
+void SteamEvent::OnLobbyChatMessage(uint64 raw_lobby_steam_id,
+                                    uint64 raw_user_steam_id,
+                                    uint8 chat_entry_type,
+                                    int chat_id) {
+  Nan::HandleScope scope;
+  v8::Local<v8::Value> argv[] = {
+      Nan::New("lobby-chat-message").ToLocalChecked(),
+      greenworks::SteamID::Create(raw_lobby_steam_id),
+      greenworks::SteamID::Create(raw_user_steam_id),
+      Nan::New(chat_entry_type),
+      Nan::New(chat_id),
+  };
+  Nan::MakeCallback(
+      Nan::New(persistent_steam_events_), "on", 5, argv);
+}
+
 }  // namespace greenworks
