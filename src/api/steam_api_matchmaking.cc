@@ -314,6 +314,47 @@ NAN_METHOD(InviteUserToLobby) {
       SteamMatchmaking()->InviteUserToLobby(lobby_id, steam_id));
 }
 
+NAN_METHOD(GetLobbyData) {
+  Nan::HandleScope scope;
+  if (info.Length() < 2 || !info[0]->IsString() || !info[1]->IsString()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  std::string lobby_id_str(*(v8::String::Utf8Value(info[0])));
+  CSteamID lobby_id(utils::strToUint64(lobby_id_str));
+  if (!lobby_id.IsValid()) {
+    THROW_BAD_ARGS("Lobby Steam ID is invalid");
+  }
+
+  std::string key_str(*(v8::String::Utf8Value(info[1])));
+
+  auto value = SteamMatchmaking()->GetLobbyData(lobby_id, key_str.c_str());
+
+  info.GetReturnValue().Set(
+      Nan::New(value).ToLocalChecked());
+}
+
+NAN_METHOD(SetLobbyData) {
+  Nan::HandleScope scope;
+  if (info.Length() < 3 || !info[0]->IsString() || !info[1]->IsString() ||
+      !info[2]->IsString()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  std::string lobby_id_str(*(v8::String::Utf8Value(info[0])));
+  CSteamID lobby_id(utils::strToUint64(lobby_id_str));
+  if (!lobby_id.IsValid()) {
+    THROW_BAD_ARGS("Lobby Steam ID is invalid");
+  }
+
+  std::string key_str(*(v8::String::Utf8Value(info[1])));
+  std::string value_str(*(v8::String::Utf8Value(info[2])));
+
+  info.GetReturnValue().Set(
+      SteamMatchmaking()->SetLobbyData(lobby_id,
+        key_str.c_str(), value_str.c_str()));
+}
+
 NAN_METHOD(GetLobbyDataCount) {
   Nan::HandleScope scope;
   if (info.Length() < 1 || !info[0]->IsString()) {
@@ -444,6 +485,12 @@ void RegisterAPIs(v8::Handle<v8::Object> exports) {
   Nan::Set(exports,
            Nan::New("inviteUserToLobby").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(InviteUserToLobby)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("getLobbyData").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(GetLobbyData)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("setLobbyData").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(SetLobbyData)->GetFunction());
   Nan::Set(exports,
            Nan::New("getLobbyDataCount").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(GetLobbyDataCount)->GetFunction());
