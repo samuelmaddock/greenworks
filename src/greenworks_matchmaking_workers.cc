@@ -93,9 +93,6 @@ RequestLobbyListWorker::RequestLobbyListWorker(
 }
 
 void RequestLobbyListWorker::Execute() {
-  SteamMatchmaking()->AddRequestLobbyListResultCountFilter(50);
-  SteamMatchmaking()->AddRequestLobbyListDistanceFilter(k_ELobbyDistanceFilterWorldwide);
-  
   SteamAPICall_t match_result = SteamMatchmaking()->RequestLobbyList();
   call_result_.Set(match_result, this, &RequestLobbyListWorker::OnLobbyMatchList);
 
