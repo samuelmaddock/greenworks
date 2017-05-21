@@ -29,6 +29,33 @@ void InitLobbyType(v8::Handle<v8::Object> exports) {
            lobby_type);
 }
 
+NAN_METHOD(RequestLobbyList) {
+  Nan::HandleScope scope;
+  if (info.Length() < 1 || !info[0]->IsFunction()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  Nan::Callback* success_callback =
+      new Nan::Callback(info[0].As<v8::Function>());
+  Nan::Callback* error_callback = NULL;
+
+  Nan::AsyncQueueWorker(new greenworks::RequestLobbyListWorker(
+      success_callback, error_callback));
+  info.GetReturnValue().Set(Nan::Undefined());
+}
+
+NAN_METHOD(GetLobbyByIndex) {
+  Nan::HandleScope scope;
+  if (info.Length() < 1 || !info[0]->IsInt32()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  int lobby_idx = info[0]->Int32Value();
+
+  CSteamID lobby_id = SteamMatchmaking()->GetLobbyByIndex(lobby_idx);
+  info.GetReturnValue().Set(greenworks::SteamID::Create(lobby_id));
+}
+
 NAN_METHOD(CreateLobby) {
   Nan::HandleScope scope;
   if (info.Length() < 3 || !info[0]->IsInt32() || !info[1]->IsInt32() ||
@@ -172,6 +199,12 @@ NAN_METHOD(GetLobbyChatEntry) {
 void RegisterAPIs(v8::Handle<v8::Object> exports) {
   InitLobbyType(exports);
 
+  Nan::Set(exports,
+           Nan::New("requestLobbyList").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(RequestLobbyList)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("getLobbyByIndex").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(GetLobbyByIndex)->GetFunction());
   Nan::Set(exports,
            Nan::New("createLobby").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(CreateLobby)->GetFunction());

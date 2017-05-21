@@ -85,4 +85,40 @@ void JoinLobbyWorker::HandleOKCallback() {
   callback->Call(1, argv);
 }
 
+
+RequestLobbyListWorker::RequestLobbyListWorker(
+    Nan::Callback* success_callback,
+    Nan::Callback* error_callback)
+        :SteamCallbackAsyncWorker(success_callback, error_callback) {
+}
+
+void RequestLobbyListWorker::Execute() {
+  SteamMatchmaking()->AddRequestLobbyListResultCountFilter(50);
+  SteamMatchmaking()->AddRequestLobbyListDistanceFilter(k_ELobbyDistanceFilterWorldwide);
+  
+  SteamAPICall_t match_result = SteamMatchmaking()->RequestLobbyList();
+  call_result_.Set(match_result, this, &RequestLobbyListWorker::OnLobbyMatchList);
+
+  WaitForCompleted();
+}
+
+void RequestLobbyListWorker::OnLobbyMatchList(
+    LobbyMatchList_t* result,
+    bool ioFailure) {
+  if (result) {
+    num_lobbies_ = result->m_nLobbiesMatching;
+  } else {
+    SetErrorMessage("Error requesting Steam matchmaking lobbies.");
+  }
+  is_completed_ = true;
+}
+
+void RequestLobbyListWorker::HandleOKCallback() {
+  Nan::HandleScope scope;
+
+  v8::Local<v8::Value> argv[] = {
+    Nan::New(num_lobbies_) };
+  callback->Call(1, argv);
+}
+
 }  // namespace greenworks
