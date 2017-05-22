@@ -257,7 +257,8 @@ NAN_METHOD(CreateLobby) {
 
 NAN_METHOD(JoinLobby) {
   Nan::HandleScope scope;
-  if (info.Length() < 1 || !info[0]->IsString()) {
+  if (info.Length() < 1 || !info[0]->IsString() ||
+      !info[1]->IsFunction()) {
     THROW_BAD_ARGS("Bad arguments");
   }
 
@@ -268,7 +269,7 @@ NAN_METHOD(JoinLobby) {
   }
 
   Nan::Callback* success_callback =
-      new Nan::Callback(info[2].As<v8::Function>());
+      new Nan::Callback(info[1].As<v8::Function>());
   Nan::Callback* error_callback = NULL;
 
   Nan::AsyncQueueWorker(new greenworks::JoinLobbyWorker(
