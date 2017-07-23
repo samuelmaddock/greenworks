@@ -405,6 +405,24 @@ NAN_METHOD(GetLobbyDataByIndex) {
   info.GetReturnValue().Set(data_pair);
 }
 
+NAN_METHOD(GetLobbyOwner) {
+  Nan::HandleScope scope;
+  if (info.Length() < 1 || !info[0]->IsString()) {
+    THROW_BAD_ARGS("Bad arguments");
+  }
+
+  std::string lobby_id_str(*(v8::String::Utf8Value(info[0])));
+  CSteamID lobby_id(utils::strToUint64(lobby_id_str));
+  if (!lobby_id.IsValid()) {
+    THROW_BAD_ARGS("Lobby Steam ID is invalid");
+  }
+
+  auto value = greenworks::SteamID::Create(
+      SteamMatchmaking()->GetLobbyOwner(lobby_id));
+
+  info.GetReturnValue().Set(value);
+}
+
 NAN_METHOD(SendLobbyChatMsg) {
   Nan::HandleScope scope;
   if (info.Length() < 2 || !info[0]->IsString() ||
@@ -498,6 +516,9 @@ void RegisterAPIs(v8::Handle<v8::Object> exports) {
   Nan::Set(exports,
            Nan::New("getLobbyDataByIndex").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(GetLobbyDataByIndex)->GetFunction());
+  Nan::Set(exports,
+           Nan::New("getLobbyOwner").ToLocalChecked(),
+           Nan::New<v8::FunctionTemplate>(GetLobbyOwner)->GetFunction());
   Nan::Set(exports,
            Nan::New("sendLobbyChatMsg").ToLocalChecked(),
            Nan::New<v8::FunctionTemplate>(SendLobbyChatMsg)->GetFunction());
